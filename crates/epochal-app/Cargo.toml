@@ -13,7 +13,7 @@ chrono = "0.4"
 image = "0.25"
 
 [build-dependencies]
-glib-build-tools = "0.20"
+glib-build-tools = "0.21"
 
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 tray-icon = "0.18"
