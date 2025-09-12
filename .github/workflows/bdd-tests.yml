@@ -46,7 +46,7 @@ jobs:
         path: bdd-results.xml
         
     - name: Report test results
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v2
       if: always()
       with:
         name: BDD Test Results
