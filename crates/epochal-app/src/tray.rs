@@ -47,24 +47,30 @@ mod platform {
         }
 
         fn menu(&self) -> Vec<MenuItem<Self>> {
-            let mut open = ksni::menu::StandardItem::default();
-            open.label = "Open Epochal".into();
-            open.activate = Box::new(|this: &mut EpochalTray| {
-                let _ = this.sender.send(TrayAction::ShowWindow);
-            });
+            let open = ksni::menu::StandardItem {
+                label: "Open Epochal".into(),
+                activate: Box::new(|this: &mut EpochalTray| {
+                    let _ = this.sender.send(TrayAction::ShowWindow);
+                }),
+                ..Default::default()
+            };
 
-            let mut quit = ksni::menu::StandardItem::default();
-            quit.label = "Quit".into();
-            quit.activate = Box::new(|this: &mut EpochalTray| {
-                let _ = this.sender.send(TrayAction::Quit);
-            });
+            let quit = ksni::menu::StandardItem {
+                label: "Quit".into(),
+                activate: Box::new(|this: &mut EpochalTray| {
+                    let _ = this.sender.send(TrayAction::Quit);
+                }),
+                ..Default::default()
+            };
 
             vec![open.into(), quit.into()]
         }
     }
 
     impl TrayManager {
-        pub fn new(sender: std::sync::mpsc::Sender<TrayAction>) -> Result<Self, Box<dyn std::error::Error>> {
+        pub fn new(
+            sender: std::sync::mpsc::Sender<TrayAction>,
+        ) -> Result<Self, Box<dyn std::error::Error>> {
             let icon = super::generate_calendar_icon_argb32();
             let service = ksni::TrayService::new(EpochalTray { icon, sender });
             let handle = service.handle();
@@ -72,7 +78,10 @@ mod platform {
                 // Blocks until the service exits
                 let _ = service.run();
             });
-            Ok(Self { _join: join, _handle: handle })
+            Ok(Self {
+                _join: join,
+                _handle: handle,
+            })
         }
     }
 }
@@ -80,16 +89,18 @@ mod platform {
 #[cfg(not(target_os = "linux"))]
 mod platform {
     use super::TrayAction;
-    use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
-    use tray_icon::menu::{Menu, MenuItem, MenuEvent};
     use std::thread;
+    use tray_icon::menu::{Menu, MenuEvent, MenuItem};
+    use tray_icon::{Icon, TrayIcon, TrayIconBuilder};
 
     pub struct TrayManager {
         _tray_icon: TrayIcon,
     }
 
     impl TrayManager {
-        pub fn new(sender: std::sync::mpsc::Sender<TrayAction>) -> Result<Self, Box<dyn std::error::Error>> {
+        pub fn new(
+            sender: std::sync::mpsc::Sender<TrayAction>,
+        ) -> Result<Self, Box<dyn std::error::Error>> {
             let icon = super::generate_calendar_icon_rgba()?;
 
             let menu = Menu::new();
@@ -120,7 +131,9 @@ mod platform {
                 .with_menu(Box::new(menu))
                 .build()?;
 
-            Ok(Self { _tray_icon: tray_icon })
+            Ok(Self {
+                _tray_icon: tray_icon,
+            })
         }
     }
 }

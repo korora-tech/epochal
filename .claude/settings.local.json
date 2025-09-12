@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(cargo test:*)",
+      "Bash(xvfb-run -a cargo test --test integration -p bdd-tests)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

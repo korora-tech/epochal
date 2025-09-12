@@ -1,9 +1,9 @@
-use gtk4::prelude::*;
+use crate::tray::TrayAction;
 use gtk4::glib;
+use gtk4::prelude::*;
 use gtk4::{Application, ApplicationWindow};
 use libadwaita as adw;
 use std::env;
-use crate::tray::TrayAction;
 
 mod tray;
 use tray::TrayManager;
@@ -38,23 +38,21 @@ fn build_ui(app: &Application) {
         .build();
 
     // Bridge tray events from worker threads to GTK main via idle_add
-    use glib::ControlFlow::{Continue, Break};
+    use glib::ControlFlow::{Break, Continue};
     let (tx, rx) = std::sync::mpsc::channel::<TrayAction>();
     let app_for_actions = app.clone();
     let win_for_actions = window.clone();
-    glib::idle_add_local(move || {
-        match rx.try_recv() {
-            Ok(TrayAction::ShowWindow) => {
-                win_for_actions.present();
-                Continue
-            }
-            Ok(TrayAction::Quit) => {
-                app_for_actions.quit();
-                Break
-            }
-            Err(std::sync::mpsc::TryRecvError::Empty) => Continue,
-            Err(std::sync::mpsc::TryRecvError::Disconnected) => Break,
+    glib::idle_add_local(move || match rx.try_recv() {
+        Ok(TrayAction::ShowWindow) => {
+            win_for_actions.present();
+            Continue
         }
+        Ok(TrayAction::Quit) => {
+            app_for_actions.quit();
+            Break
+        }
+        Err(std::sync::mpsc::TryRecvError::Empty) => Continue,
+        Err(std::sync::mpsc::TryRecvError::Disconnected) => Break,
     });
 
     let _tray_manager = if enable_tray {
@@ -62,7 +60,7 @@ fn build_ui(app: &Application) {
             Ok(tray) => {
                 println!("System tray icon created successfully");
                 Some(tray)
-            },
+            }
             Err(e) => {
                 eprintln!("Tray init failed (continuing without tray): {}", e);
                 None
@@ -90,8 +88,6 @@ fn build_ui(app: &Application) {
 
     // Present window
     window.present();
-
-    
 
     // Keep tray manager alive for the lifetime of the application
     if let Some(tray) = _tray_manager {

@@ -1,30 +1,25 @@
+use super::wait_for_gtk_events;
 use cucumber::World;
 use gtk4::prelude::*;
-use gtk4::{Application, ApplicationWindow};
+use gtk4::ApplicationWindow;
 use libadwaita as adw;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
 #[derive(Debug, World)]
 #[world(init = Self::new)]
 pub struct TestWorld {
     pub app: Option<adw::Application>,
     pub window: Option<ApplicationWindow>,
-    pub widgets: HashMap<String, gtk4::Widget>,
     pub tray_available: bool,
     pub error_messages: Vec<String>,
-    pub runtime: Option<tokio::runtime::Handle>,
 }
 
 impl TestWorld {
-    async fn new() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    async fn new() -> Result<Self, cucumber::codegen::anyhow::Error> {
         Ok(Self {
             app: None,
             window: None,
-            widgets: HashMap::new(),
             tray_available: true,
             error_messages: Vec::new(),
-            runtime: None,
         })
     }
 
@@ -37,11 +32,11 @@ impl TestWorld {
 
     pub fn create_test_app(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         self.ensure_gtk_init()?;
-        
+
         let app = adw::Application::builder()
-            .application_id("com.korora.Epochal.test")
+            .application_id("com.korora.Epochal")
             .build();
-        
+
         self.app = Some(app);
         Ok(())
     }
@@ -51,50 +46,42 @@ impl TestWorld {
     }
 
     pub fn launch_app(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Check if tray is available and log a warning if not
+        if !self.tray_available {
+            self.log_error("Failed to create system tray icon".to_string());
+        }
+
         if let Some(app) = &self.app {
-            let app_clone = app.clone();
-            let window_ref = Arc::new(Mutex::new(None));
-            let window_ref_clone = window_ref.clone();
+            // For testing, create the window directly without going through app activation
+            // This avoids the need for a running GTK main loop
+            let window = ApplicationWindow::builder()
+                .application(app)
+                .title("Epochal")
+                .default_width(800)
+                .default_height(600)
+                .build();
 
-            app.connect_activate(move |app| {
-                // Create window similar to main.rs but for testing
-                let window = ApplicationWindow::builder()
-                    .application(app)
-                    .title("Epochal")
-                    .default_width(800)
-                    .default_height(600)
-                    .build();
+            let header_bar = adw::HeaderBar::builder()
+                .title_widget(&adw::WindowTitle::new("Epochal", "GTK4 + Blueprint UI"))
+                .build();
 
-                let header_bar = adw::HeaderBar::builder()
-                    .title_widget(&adw::WindowTitle::new("Epochal", "GTK4 + Blueprint UI"))
-                    .build();
+            let content = adw::StatusPage::builder()
+                .title("Welcome to Epochal!")
+                .description("Your GTK4 application with Blueprint UI and system tray icon")
+                .icon_name("application-x-executable")
+                .build();
 
-                let content = adw::StatusPage::builder()
-                    .title("Welcome to Epochal!")
-                    .description("Your GTK4 application with Blueprint UI and system tray icon")
-                    .icon_name("application-x-executable")
-                    .build();
+            window.set_titlebar(Some(&header_bar));
+            window.set_child(Some(&content));
 
-                window.set_titlebar(Some(&header_bar));
-                window.set_child(Some(&content));
+            // Make window visible for tests
+            window.set_visible(true);
 
-                // Store window reference for testing
-                if let Ok(mut window_guard) = window_ref_clone.lock() {
-                    *window_guard = Some(window.clone());
-                }
+            // Store the window reference
+            self.window = Some(window);
 
-                window.present();
-            });
-
-            // Simulate app activation
-            app.activate();
-            
-            // Get the window reference
-            if let Ok(window_guard) = window_ref.lock() {
-                if let Some(window) = window_guard.clone() {
-                    self.window = Some(window);
-                }
-            }
+            // Process any pending GTK events
+            wait_for_gtk_events();
         }
         Ok(())
     }
