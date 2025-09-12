@@ -1,0 +1,21 @@
+[workspace]
+members = [
+    "crates/*",
+]
+resolver = "2"
+
+[workspace.dependencies]
+gtk4 = "0.9"
+libadwaita = "0.7"
+glib = "0.20"
+gio = "0.20"
+gdk4 = "0.9"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+debug = true
