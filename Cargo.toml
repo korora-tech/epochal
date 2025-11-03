@@ -8,7 +8,7 @@ resolver = "2"
 gtk4 = "0.9"
 libadwaita = "0.7"
 glib = "0.20"
-gio = "0.20"
+gio = "0.21"
 gdk4 = "0.9"
 
 [profile.release]
