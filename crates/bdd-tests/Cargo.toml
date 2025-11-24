@@ -15,7 +15,7 @@ gdk4 = { workspace = true }
 
 [dev-dependencies]
 proptest = "1.4"
-insta = "1.34"
+insta = "1.44"
 
 [[test]]
 name = "integration"
